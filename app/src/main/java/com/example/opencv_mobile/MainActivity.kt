@@ -30,7 +30,7 @@ import androidx.core.content.ContextCompat
 import kotlinx.android.synthetic.main.activity_main.*
 import java.text.SimpleDateFormat
 import java.util.*
-import android.content.Context
+import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import java.io.FileInputStream
@@ -41,6 +41,7 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.android.synthetic.main.activity_cvimg.*
 import org.opencv.core.MatOfPoint
 
+import androidx.core.content.FileProvider
 
 class MainActivity : AppCompatActivity() {
     private var imageCapture: ImageCapture? = null
@@ -130,7 +131,11 @@ class MainActivity : AppCompatActivity() {
 
                     var bmp = getcontour(imgData)
 
-                    setScreenCV(bmp)
+//                    setScreenCV(bmp)
+
+                    val uri: Uri = bitmapToUri(bmp)
+
+                    intent_for_CVimg(uri)
 
                     val msg = "Photo capture succeeded: ${photoFile.absolutePath}"
                     viewFinder.post {
@@ -354,7 +359,6 @@ class MainActivity : AppCompatActivity() {
     private fun setScreenMain() {
         setContentView(R.layout.activity_main)
 
-
     }
 
     private fun setScreenCV(bmp: Bitmap){
@@ -363,13 +367,49 @@ class MainActivity : AppCompatActivity() {
         var imageView = findViewById<ImageView>(R.id.capturedImg)
         imageView.setImageBitmap(bmp)
 
-        returnBtn.setOnClickListener{
+        rtnBtn.setOnClickListener{
             finish()
             setScreenMain()
 
 
         }
     }
+
+    private fun intent_for_CVimg(uri: Uri){
+        var intent = Intent(this, imgActivity::class.java)
+
+        intent.putExtra("uri", uri)
+
+        startActivity(intent)
+    }
+
+    private fun bitmapToUri(bitmap: Bitmap): Uri {
+
+        // 一時ファイル作成用のキャッシュディレクトリを定義する
+        val cacheDir: File = this.cacheDir
+
+        // 現在日時からファイル名を生成する
+        val fileName: String = System.currentTimeMillis().toString() + ".jpg"
+
+        // 空のファイルを生成する
+        val file = File(cacheDir, fileName)
+
+        // ファイルにバイトデータを書き込み開始する
+        val fileOutputStream: FileOutputStream? = FileOutputStream(file)
+
+        // ファイルにbitmapを書き込む
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
+
+        // ファイルにバイトデータを書き込み終了する
+        fileOutputStream?.close()
+
+        // ファイルからcontent://スキーマ形式のuriを取得する
+//        val contentSchemaUri: Uri = FileProvider.getUriForFile(this, "com.hoge.fuga.fileprovider.fileprovider", file)
+        val contentSchemaUri: Uri = Uri.fromFile(file)
+        return contentSchemaUri
+    }
+
+
 
     companion object {
         private const val TAG = "CameraXBasic"
