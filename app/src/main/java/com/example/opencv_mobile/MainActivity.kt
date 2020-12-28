@@ -43,6 +43,11 @@ import org.opencv.core.MatOfPoint
 
 import androidx.core.content.FileProvider
 
+// camscanner用
+import com.labters.documentscanner.helpers.ScannerConstants
+import com.labters.documentscanner.ImageCropActivity
+import android.provider.SyncStateContract.Constants
+
 class MainActivity : AppCompatActivity() {
     private var imageCapture: ImageCapture? = null
 
@@ -131,7 +136,7 @@ class MainActivity : AppCompatActivity() {
 
                     var bmp = getcontour(imgData)
 
-//                    setScreenCV(bmp)
+//                    intent_for_crop(bmp)
 
                     val uri: Uri = bitmapToUri(bmp)
 
@@ -356,24 +361,6 @@ class MainActivity : AppCompatActivity() {
 
     }
 
-    private fun setScreenMain() {
-        setContentView(R.layout.activity_main)
-
-    }
-
-    private fun setScreenCV(bmp: Bitmap){
-        setContentView(R.layout.activity_cvimg)
-
-        var imageView = findViewById<ImageView>(R.id.capturedImg)
-        imageView.setImageBitmap(bmp)
-
-        rtnBtn.setOnClickListener{
-            finish()
-            setScreenMain()
-
-
-        }
-    }
 
     private fun intent_for_CVimg(uri: Uri){
         var intent = Intent(this, imgActivity::class.java)
@@ -382,6 +369,8 @@ class MainActivity : AppCompatActivity() {
 
         startActivity(intent)
     }
+
+
 
     private fun bitmapToUri(bitmap: Bitmap): Uri {
 
@@ -408,6 +397,12 @@ class MainActivity : AppCompatActivity() {
         val contentSchemaUri: Uri = Uri.fromFile(file)
         return contentSchemaUri
     }
+
+//    private fun intent_for_crop(bmp: Bitmap){
+//        ScannerConstants.selectedImageBitmap=bmp
+////        startActivityForResult(Intent(MainActivity@this, ImageCropActivity::class.java), Constants.REQUEST_CROP)
+//        startActivityForResult(Intent(MainActivity@this, ImageCropActivity::class.java), 1234)
+//    }
 
 
 
