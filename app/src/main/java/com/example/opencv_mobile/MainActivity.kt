@@ -4,6 +4,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import android.os.Bundle
 import android.Manifest
+import android.app.Activity
 // OpenCV用
 import org.opencv.android.OpenCVLoader
 import org.opencv.core.Mat
@@ -136,11 +137,11 @@ class MainActivity : AppCompatActivity() {
 
                     var bmp = getcontour(imgData)
 
-//                    intent_for_crop(bmp)
+                    manual_crop(bmp)
 
-                    val uri: Uri = bitmapToUri(bmp)
 
-                    intent_for_CVimg(uri)
+//                    val uri: Uri = bitmapToUri(bmp)
+//                    intent_for_CVimg(uri)
 
                     val msg = "Photo capture succeeded: ${photoFile.absolutePath}"
                     viewFinder.post {
@@ -302,7 +303,8 @@ class MainActivity : AppCompatActivity() {
         Imgproc.approxPolyDP(max, approx, epsilon, true)
 
         if (approx.rows() != 4) {
-            // 角が4つじゃない場合（四角形でない場合）は検出失敗としてnullを返す
+            // 角が4つじゃない場合（四角形でない場合）は検出失敗として、そのまま画像を返す
+            Toast.makeText(applicationContext, "書類を検出できませんでした", Toast.LENGTH_SHORT).show()
             return bmp
         }
 
@@ -348,8 +350,8 @@ class MainActivity : AppCompatActivity() {
         Utils.bitmapToMat(bmp, transformed)
         Imgproc.warpPerspective(org_mat, transformed, projectMatrix, Size(cardImageWidth, cardImageHeight))
 
-//        if (cardImageHeight > cardImageWidth) {
-//            // 縦長の場合は90度回転させる
+        // 横長の場合は90度回転させる
+//        if (cardImageHeight < cardImageWidth) {
 //            Core.rotate(transformed, transformed, Core.ROTATE_90_CLOCKWISE)
 //        }
 
@@ -371,6 +373,28 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    private fun manual_crop(bmp: Bitmap){
+        ScannerConstants.selectedImageBitmap=bmp
+////        startActivityForResult(Intent(MainActivity@this, ImageCropActivity::class.java), Constants.REQUEST_CROP)
+        startActivityForResult(Intent(MainActivity@this, ImageCropActivity::class.java), 1234)
+
+
+
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        if (requestCode==1234 && resultCode== Activity.RESULT_OK )
+        {
+            if (ScannerConstants.selectedImageBitmap!=null) {
+                val uri: Uri = bitmapToUri(ScannerConstants.selectedImageBitmap)
+                intent_for_CVimg(uri)
+            }
+            else
+                Toast.makeText(MainActivity@this,"Something wen't wrong.",Toast.LENGTH_LONG).show()
+        }
+    }
 
     private fun bitmapToUri(bitmap: Bitmap): Uri {
 
@@ -397,12 +421,6 @@ class MainActivity : AppCompatActivity() {
         val contentSchemaUri: Uri = Uri.fromFile(file)
         return contentSchemaUri
     }
-
-//    private fun intent_for_crop(bmp: Bitmap){
-//        ScannerConstants.selectedImageBitmap=bmp
-////        startActivityForResult(Intent(MainActivity@this, ImageCropActivity::class.java), Constants.REQUEST_CROP)
-//        startActivityForResult(Intent(MainActivity@this, ImageCropActivity::class.java), 1234)
-//    }
 
 
 
