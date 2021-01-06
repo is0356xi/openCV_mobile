@@ -119,8 +119,8 @@ class MainActivity : AppCompatActivity() {
                     val bitmapWidth = bitmap.width
                     val bitmapHeight = bitmap.height
                     val matrix = Matrix()
-//                    matrix.setRotate(0F, bitmapWidth / 2F, bitmapHeight / 2F)
-//                    matrix.setRotate(0F, bitmapWidth / 2F, bitmapHeight / 2F)
+                    matrix.setRotate(90F, bitmapWidth / 2F, bitmapHeight / 2F)
+                    matrix.setRotate(90F, bitmapWidth / 2F, bitmapHeight / 2F)
                     val rotatedBitmap = Bitmap.createBitmap(
                         bitmap,
                         0,
@@ -135,13 +135,15 @@ class MainActivity : AppCompatActivity() {
 
 
 
-                    var bmp = getcontour(imgData)
+                    var bmp : Bitmap? = getcontour(imgData)
 
-                    manual_crop(bmp)
+                    if(bmp==null){
+                        manual_crop(imgData)
+                    }else{
+                        val uri: Uri = bitmapToUri(bmp)
+                        intent_for_CVimg(uri)
+                    }
 
-
-//                    val uri: Uri = bitmapToUri(bmp)
-//                    intent_for_CVimg(uri)
 
                     val msg = "Photo capture succeeded: ${photoFile.absolutePath}"
                     viewFinder.post {
@@ -275,7 +277,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // 輪郭抽出
-    private fun getcontour(bmp: Bitmap): Bitmap{
+    private fun getcontour(bmp: Bitmap): Bitmap?{
 
         // Matオブジェクトに変換
         var org_mat = Mat()
@@ -305,7 +307,8 @@ class MainActivity : AppCompatActivity() {
         if (approx.rows() != 4) {
             // 角が4つじゃない場合（四角形でない場合）は検出失敗として、そのまま画像を返す
             Toast.makeText(applicationContext, "書類を検出できませんでした", Toast.LENGTH_SHORT).show()
-            return bmp
+
+            return null
         }
 
 
@@ -378,8 +381,6 @@ class MainActivity : AppCompatActivity() {
 ////        startActivityForResult(Intent(MainActivity@this, ImageCropActivity::class.java), Constants.REQUEST_CROP)
         startActivityForResult(Intent(MainActivity@this, ImageCropActivity::class.java), 1234)
 
-
-
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -388,15 +389,27 @@ class MainActivity : AppCompatActivity() {
         if (requestCode==1234 && resultCode== Activity.RESULT_OK )
         {
             if (ScannerConstants.selectedImageBitmap!=null) {
+
+//                var bmp : Bitmap? = getcontour(ScannerConstants.selectedImageBitmap)
+//
+//                if(bmp==null){
+//                    Toast.makeText(MainActivity@this,"書類検出不可",Toast.LENGTH_LONG).show()
+//                }else{
+//                    val uri: Uri = bitmapToUri(bmp)
+//                    intent_for_CVimg(uri)
+//                }
+
                 val uri: Uri = bitmapToUri(ScannerConstants.selectedImageBitmap)
                 intent_for_CVimg(uri)
+
+
             }
             else
                 Toast.makeText(MainActivity@this,"Something wen't wrong.",Toast.LENGTH_LONG).show()
         }
     }
 
-    private fun bitmapToUri(bitmap: Bitmap): Uri {
+    private fun bitmapToUri(bitmap: Bitmap?): Uri {
 
         // 一時ファイル作成用のキャッシュディレクトリを定義する
         val cacheDir: File = this.cacheDir
@@ -411,7 +424,7 @@ class MainActivity : AppCompatActivity() {
         val fileOutputStream: FileOutputStream? = FileOutputStream(file)
 
         // ファイルにbitmapを書き込む
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
+        bitmap?.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
 
         // ファイルにバイトデータを書き込み終了する
         fileOutputStream?.close()
