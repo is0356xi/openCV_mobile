@@ -19,6 +19,9 @@ allprojects {
     repositories {
         google()
         jcenter()
+
+        // camscanner library
+        maven { url "https://jitpack.io" }
         
     }
 }

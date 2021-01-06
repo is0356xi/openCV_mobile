@@ -46,4 +46,9 @@ dependencies {
     implementation "androidx.camera:camera-lifecycle:$camerax_version"
     // CameraX View class
     implementation "androidx.camera:camera-view:1.0.0-alpha14"
+
+    // CamScanner Library
+    implementation 'io.reactivex.rxjava2:rxandroid:2.1.0'
+    implementation 'com.github.mayuce:AndroidDocumentScanner:1.5.3'
+    implementation project(path: ':openCVLibrary')
 }
