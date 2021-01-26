@@ -119,8 +119,8 @@ class MainActivity : AppCompatActivity() {
                     val bitmapWidth = bitmap.width
                     val bitmapHeight = bitmap.height
                     val matrix = Matrix()
-                    matrix.setRotate(90F, bitmapWidth / 2F, bitmapHeight / 2F)
-                    matrix.setRotate(90F, bitmapWidth / 2F, bitmapHeight / 2F)
+                    matrix.setRotate(0F, bitmapWidth / 2F, bitmapHeight / 2F)
+                    matrix.setRotate(0F, bitmapWidth / 2F, bitmapHeight / 2F)
                     val rotatedBitmap = Bitmap.createBitmap(
                         bitmap,
                         0,
@@ -309,6 +309,7 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(applicationContext, "書類を検出できませんでした", Toast.LENGTH_SHORT).show()
 
             return null
+//            return bmp
         }
 
 
@@ -389,18 +390,18 @@ class MainActivity : AppCompatActivity() {
         if (requestCode==1234 && resultCode== Activity.RESULT_OK )
         {
             if (ScannerConstants.selectedImageBitmap!=null) {
-
-//                var bmp : Bitmap? = getcontour(ScannerConstants.selectedImageBitmap)
 //
-//                if(bmp==null){
-//                    Toast.makeText(MainActivity@this,"書類検出不可",Toast.LENGTH_LONG).show()
-//                }else{
-//                    val uri: Uri = bitmapToUri(bmp)
-//                    intent_for_CVimg(uri)
-//                }
+                var bmp : Bitmap? = getcontour(ScannerConstants.selectedImageBitmap)
 
-                val uri: Uri = bitmapToUri(ScannerConstants.selectedImageBitmap)
-                intent_for_CVimg(uri)
+                if(bmp==null){
+                    Toast.makeText(MainActivity@this,"書類検出不可",Toast.LENGTH_LONG).show()
+                }else{
+                    val uri: Uri = bitmapToUri(bmp)
+                    intent_for_CVimg(uri)
+                }
+
+//                val uri: Uri = bitmapToUri(ScannerConstants.selectedImageBitmap)
+//                intent_for_CVimg(uri)
 
 
             }
