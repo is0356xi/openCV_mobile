@@ -137,12 +137,16 @@ class MainActivity : AppCompatActivity() {
 
                     var bmp : Bitmap? = getcontour(imgData)
 
-                    if(bmp==null){
-                        manual_crop(imgData)
-                    }else{
-                        val uri: Uri = bitmapToUri(bmp)
-                        intent_for_CVimg(uri)
-                    }
+                    var uri: Uri = bitmapToUri(bmp)
+
+                    intent_for_CVimg(uri)
+
+//                    if(bmp==null){
+//                        manual_crop(imgData)
+//                    }else{
+//                        val uri: Uri = bitmapToUri(bmp)
+//                        intent_for_CVimg(uri)
+//                    }
 
 
                     val msg = "Photo capture succeeded: ${photoFile.absolutePath}"
@@ -308,8 +312,8 @@ class MainActivity : AppCompatActivity() {
             // 角が4つじゃない場合（四角形でない場合）は検出失敗として、そのまま画像を返す
             Toast.makeText(applicationContext, "書類を検出できませんでした", Toast.LENGTH_SHORT).show()
 
-            return null
-//            return bmp
+//            return null
+            return bmp
         }
 
 
@@ -355,11 +359,11 @@ class MainActivity : AppCompatActivity() {
         Imgproc.warpPerspective(org_mat, transformed, projectMatrix, Size(cardImageWidth, cardImageHeight))
 
         // 横長の場合は90度回転させる
-//        if (cardImageHeight < cardImageWidth) {
-//            Core.rotate(transformed, transformed, Core.ROTATE_90_CLOCKWISE)
-//        }
+        if (cardImageHeight < cardImageWidth) {
+            Core.rotate(transformed, transformed, Core.ROTATE_90_CLOCKWISE)
+        }
 
-        Core.rotate(transformed, transformed, Core.ROTATE_90_CLOCKWISE)
+//        Core.rotate(transformed, transformed, Core.ROTATE_90_CLOCKWISE)
 
         val newBitmap = Bitmap.createBitmap(transformed.width(), transformed.height(), Bitmap.Config.ARGB_8888)
         Utils.matToBitmap(transformed, newBitmap)
