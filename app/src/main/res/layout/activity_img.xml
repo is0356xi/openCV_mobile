@@ -10,7 +10,7 @@
         android:id="@+id/frameLayout"
         android:layout_width="323dp"
         android:layout_height="484dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="40dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -18,7 +18,7 @@
         <ImageView
             android:id="@+id/capturedImg"
             android:layout_width="320dp"
-            android:layout_height="match_parent" />
+            android:layout_height="485dp" />
 
     </FrameLayout>
 
@@ -40,6 +40,22 @@
         android:text="OK"
         app:layout_constraintStart_toEndOf="@+id/ngBtn"
         app:layout_constraintTop_toBottomOf="@+id/frameLayout" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        app:layout_constraintBottom_toTopOf="@+id/frameLayout"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:layout_editor_absoluteX="207dp">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="様式IDを入力(様式2-2 の場合、2-2を入力)"
+            android:maxLines="1"/>
+    </com.google.android.material.textfield.TextInputLayout>
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,53 +1,53 @@
 package com.example.opencv_mobile
 
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
-import android.os.Bundle
-import android.Manifest
-import android.app.Activity
 // OpenCV用
-import org.opencv.android.OpenCVLoader
-import org.opencv.core.Mat
-import org.opencv.android.Utils
-import org.opencv.imgproc.Imgproc
-import org.opencv.core.MatOfPoint2f
-import org.opencv.core.CvType
-import org.opencv.core.Size
-import org.opencv.core.Core
-import kotlin.math.pow
-import kotlin.math.roundToInt
 // camerax用
-import androidx.camera.core.*
-import androidx.camera.lifecycle.ProcessCameraProvider
-import java.io.File
-import java.util.concurrent.ExecutorService
-import android.graphics.Bitmap
-import java.util.concurrent.Executors
-import android.content.pm.PackageManager
-import android.net.Uri
-import android.util.Log
-import android.widget.Toast
-import androidx.core.content.ContextCompat
-import kotlinx.android.synthetic.main.activity_main.*
-import java.text.SimpleDateFormat
-import java.util.*
-import android.content.Intent
-import android.graphics.BitmapFactory
-import android.graphics.Matrix
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import android.widget.ImageView
-
-import kotlinx.android.synthetic.main.activity_main.*
-import kotlinx.android.synthetic.main.activity_cvimg.*
-import org.opencv.core.MatOfPoint
-
-import androidx.core.content.FileProvider
 
 // camscanner用
-import com.labters.documentscanner.helpers.ScannerConstants
-import com.labters.documentscanner.ImageCropActivity
-import android.provider.SyncStateContract.Constants
+import android.Manifest
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Matrix
+import android.net.Uri
+import android.os.Bundle
+import android.provider.MediaStore
+import android.util.Log
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
+import androidx.camera.core.Preview
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import com.squareup.moshi.Moshi
+import kotlinx.android.synthetic.main.activity_main.*
+import okhttp3.MediaType
+import okhttp3.OkHttpClient
+import okhttp3.RequestBody
+import org.opencv.android.OpenCVLoader
+import org.opencv.android.Utils
+import org.opencv.core.*
+import org.opencv.imgproc.Imgproc
+import retrofit2.Retrofit
+import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory
+import retrofit2.converter.moshi.MoshiConverterFactory
+import rx.Subscriber
+import rx.schedulers.Schedulers
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import kotlin.math.pow
+import kotlin.math.roundToInt
+
 
 class MainActivity : AppCompatActivity() {
     private var imageCapture: ImageCapture? = null
@@ -140,14 +140,6 @@ class MainActivity : AppCompatActivity() {
                     var uri: Uri = bitmapToUri(bmp)
 
                     intent_for_CVimg(uri)
-
-//                    if(bmp==null){
-//                        manual_crop(imgData)
-//                    }else{
-//                        val uri: Uri = bitmapToUri(bmp)
-//                        intent_for_CVimg(uri)
-//                    }
-
 
                     val msg = "Photo capture succeeded: ${photoFile.absolutePath}"
                     viewFinder.post {
@@ -242,36 +234,10 @@ class MainActivity : AppCompatActivity() {
         var mat = Mat()
         Utils.bitmapToMat(bmp, mat)
 
-//         グレースケール --> 2値化
+        // グレースケール --> 2値化
         Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2GRAY)  // まずグレースケールへ(明るさだけの形式)
         Imgproc.threshold(mat, mat, 150.0, 255.0, Imgproc.THRESH_OTSU)  // 明るさが0を境に白と黒へ変換
 
-//        Imgproc.cvtColor(mat, mat, Imgproc.COLOR_RGB2GRAY)
-//        // 二値化の閾値算出
-//        val flatMat = arrayListOf<Double>()
-//        for (i in 0 until mat.rows()) {
-//            for (j in 0 until mat.cols()) {
-//                flatMat.add(mat[i, j][0])
-//            }
-//        }
-//        var thresholdValue = 100
-//        val cardLuminancePercentage = 0.2
-//        val numberThreshold = mat.width() * mat.height() * cardLuminancePercentage
-//        for (diffLuminance in 0 until 100) {
-//            val count = flatMat.count { it > (200 - diffLuminance).toDouble() }
-//            if (count >= numberThreshold) {
-//                thresholdValue = 200 - diffLuminance
-//                break
-//            }
-//        }
-//        // 二値化
-//        Imgproc.threshold(
-//            mat,
-//            mat,
-//            thresholdValue.toDouble(),
-//            255.0,
-//            Imgproc.THRESH_BINARY
-//        )
 
         // 2値化したMatをbitmapに変換
         var th_bmp = Bitmap.createBitmap(bmp.width, bmp.height, Bitmap.Config.ARGB_8888)
@@ -377,41 +343,87 @@ class MainActivity : AppCompatActivity() {
 
         intent.putExtra("uri", uri)
 
-        startActivity(intent)
-    }
-
-
-    private fun manual_crop(bmp: Bitmap){
-        ScannerConstants.selectedImageBitmap=bmp
-////        startActivityForResult(Intent(MainActivity@this, ImageCropActivity::class.java), Constants.REQUEST_CROP)
-        startActivityForResult(Intent(MainActivity@this, ImageCropActivity::class.java), 1234)
-
+        startActivityForResult(intent, 1)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        if (requestCode==1234 && resultCode== Activity.RESULT_OK )
-        {
-            if (ScannerConstants.selectedImageBitmap!=null) {
-//
-                var bmp : Bitmap? = getcontour(ScannerConstants.selectedImageBitmap)
+        if (requestCode != 1) { return }
 
-                if(bmp==null){
-                    Toast.makeText(MainActivity@this,"書類検出不可",Toast.LENGTH_LONG).show()
-                }else{
-                    val uri: Uri = bitmapToUri(bmp)
-                    intent_for_CVimg(uri)
-                }
+        if (resultCode == Activity.RESULT_OK && data != null) {
+            // IntentからURIを取得
+            val uri = data.getParcelableExtra("uri") as Uri?
+            var label = data.getStringExtra("label") as String
 
-//                val uri: Uri = bitmapToUri(ScannerConstants.selectedImageBitmap)
-//                intent_for_CVimg(uri)
+            // URIをBitmapとして取得
+            var bmp: Bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
 
+            // "様式xx" の部分のみのBitmapを取得
+            bmp = getlabel(bmp)
 
-            }
-            else
-                Toast.makeText(MainActivity@this,"Something wen't wrong.",Toast.LENGTH_LONG).show()
+            // BitmapをFileに変換し、サーバにPOSTする
+            val file = bitmapTofile(bmp)
+            Log.e("label", label)
+            img_post(1, label, file)
+
+        } else if(resultCode == Activity.RESULT_CANCELED) {
+            Log.e("ImgCropIntent", "キャンセルされたよ !!!!!!")
         }
+
+    }
+
+    // 様式xxの部分のBitmapを取得する関数
+    private  fun getlabel(bitmap: Bitmap?): Bitmap{
+        //幅と高さの取得
+        //幅と高さの取得
+        val imageWidth: Int = bitmap!!.getWidth()
+        val imageHeight: Int = bitmap!!.getHeight()
+
+
+        //トリミングする幅、高さ、座標の設定
+        val nWidth = (imageWidth * 0.20f).toInt()
+        val nHeight = (imageHeight * 0.1).toInt()
+        val startX = (imageWidth * 0.07f).toInt()
+        val startY = 0
+//        val startY = (imageHeight - nHeight) / 2
+
+
+        //トリミングしたBitmapの作成
+        val newbitmap = Bitmap.createBitmap(
+                    bitmap,
+                    startX,
+                    startY,
+                    nWidth,
+                    nHeight,
+                    null,
+                    true
+                )
+
+        return newbitmap
+    }
+
+    private fun bitmapTofile(bitmap: Bitmap?): File {
+
+        // 一時ファイル作成用のキャッシュディレクトリを定義する
+        val cacheDir: File = this.cacheDir
+
+        // 現在日時からファイル名を生成する
+        val fileName: String = System.currentTimeMillis().toString() + ".jpg"
+
+        // 空のファイルを生成する
+        val file = File(cacheDir, fileName)
+
+        // ファイルにバイトデータを書き込み開始する
+        val fileOutputStream: FileOutputStream? = FileOutputStream(file)
+
+        // ファイルにbitmapを書き込む
+        bitmap?.compress(Bitmap.CompressFormat.JPEG, 100, fileOutputStream)
+
+        // ファイルにバイトデータを書き込み終了する
+        fileOutputStream?.close()
+
+        return file
     }
 
     private fun bitmapToUri(bitmap: Bitmap?): Uri {
@@ -437,10 +449,57 @@ class MainActivity : AppCompatActivity() {
         // ファイルからcontent://スキーマ形式のuriを取得する
 //        val contentSchemaUri: Uri = FileProvider.getUriForFile(this, "com.hoge.fuga.fileprovider.fileprovider", file)
         val contentSchemaUri: Uri = Uri.fromFile(file)
+
         return contentSchemaUri
     }
 
+    private fun img_post(userId: Int, body: String, image: File) {
+        Log.e("imgActivity", "img POST !!!!!!!")
+        // =====送信するデータを整形する=====
+        val map: MutableMap<String, RequestBody> = HashMap() // このオブジェクトを送信する
 
+        val userId = RequestBody.create(MediaType.parse("text/plain"), userId.toString())
+        val body = RequestBody.create(MediaType.parse("text/plain"), body)
+
+
+        val requestBody = RequestBody.create(MediaType.parse("image/jpg"), image) // 拡張子は任意で変えてください
+        map.put("user_id", userId)
+        map.put("body", body)
+        map.put("img_file\"; filename=\"image.png\"", requestBody)
+
+        Log.e("img_post", body.toString())
+
+        createApiClient().ImgPostEntry(params = map)
+            .subscribeOn(Schedulers.newThread())
+            .observeOn(Schedulers.io())
+            .subscribe(object: Subscriber<PostResponse>() {
+                override fun onNext(r: PostResponse?) {  // 成功
+                    Log.e("imgActivity", r.toString())
+                }
+                override fun onError(e: Throwable?) {
+                    Log.e("imgActivity", e.toString())  // 失敗
+                }
+                override fun onCompleted() {
+                }
+            })
+    }
+    /**
+     * APIクライアントのインスタンスを生成して返却する関数
+     */
+
+    private fun createApiClient(): ApiInterface {
+        val moshi = Moshi.Builder()
+            .build()
+        val okClient = OkHttpClient()
+
+        val builder = Retrofit.Builder()
+            .client(okClient)
+            .addCallAdapterFactory(RxJavaCallAdapterFactory.create())
+            .addConverterFactory(MoshiConverterFactory.create(moshi))
+            .baseUrl("http://192.168.100.60:5000/")
+            .build()
+        return builder.create(ApiInterface::class.java)
+    }
 
     companion object {
         private const val TAG = "CameraXBasic"
