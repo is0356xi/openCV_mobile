@@ -360,7 +360,7 @@ class MainActivity : AppCompatActivity() {
             var bmp: Bitmap = MediaStore.Images.Media.getBitmap(contentResolver, uri)
 
             // "様式xx" の部分のみのBitmapを取得
-            bmp = getlabel(bmp)
+//            bmp = getlabel(bmp)
 
             // BitmapをFileに変換し、サーバにPOSTする
             val file = bitmapTofile(bmp)
