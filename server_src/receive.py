@@ -16,7 +16,7 @@ def post():
 
         # 保存先ファイルを決定する
         file_num = _get_filenum(file_id)
-        save_path = "images/{0}/{1}.jpg".format(file_id, file_num)
+        save_path = "train_images/{0}/{1}.jpg".format(file_id, file_num)
 
         # 画像を保存する
         file = request.files['img_file'] # POSTされた画像ファイルを取得
@@ -31,7 +31,7 @@ def post():
 
 # 保存先ファイルを決定する関数
 def _get_filenum(file_id: str) -> str:
-    path = "images/" + file_id
+    path = "train_images/" + file_id
 
     if os.path.exists(path):
         # ファイルパスのリストを取得

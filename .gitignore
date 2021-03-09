@@ -103,5 +103,10 @@ lint/tmp/
 # Android Profiling
 *.hprof
 
-*.jpg
-*.png
+*.pyc
+server_src/images/*
+!server_src/images/base
+server_src/nn/train_images/*
+server_src/table_rec/rec_images/*
+server_src/Screenshot_20210212-170322.png
+server_src/Screenshot_2021-02-12-17-03-32.jpg
