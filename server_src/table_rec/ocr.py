@@ -13,11 +13,13 @@ class ocr:
         self.tool = tools[0]
         print("Will use tool '%s'" % (self.tool.get_name()))
 
-    def read_txt(self, img):
+    def read_txt(self, img, layout):
         txt = self.tool.image_to_string(
             img,
-            lang="jpn",
-            builder=pyocr.builders.TextBuilder(tesseract_layout=6)
+            lang="jpn_vert",
+            # builder=pyocr.builders.TextBuilder(tesseract_layout=layout)
+            builder=pyocr.builders.LineBoxBuilder(tesseract_layout=layout)
+            # builder=pyocr.builders.WordBoxBuilder(tesseract_layout=layout)
         )
         
         # print(txt)
