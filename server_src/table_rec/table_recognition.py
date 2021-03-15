@@ -15,7 +15,7 @@ from PIL import Image
 class table_rec:
     def __init__(self, img_path, output_name, rotate=False):
         if rotate:
-            self.angle = -2.0
+            self.angle = -2.5
             img = cv2.imread(img_path)
             self.img = self._rotate_img(img, self.angle)
         else:
@@ -24,8 +24,11 @@ class table_rec:
         self.gray = cv2.cvtColor(self.img, cv2.COLOR_BGR2GRAY)
         self.output_name = output_name
 
-        self.minArea = 30000
-        # self.minArea = 10000
+        # self.minArea = 30000
+        self.minArea = 8000
+        self.maxArea = 500000
+
+        self.stop = 0
 
         self.ocr = ocr.ocr()
 
@@ -44,10 +47,12 @@ class table_rec:
         rects = []
         for cnt, hrchy in zip(contours, hierarchy[0]):
             # if cv2.contourArea(cnt) < self.minArea:
-            if cv2.contourArea(cnt) < self.minArea:
+            if cv2.contourArea(cnt) < self.minArea or self.maxArea < cv2.contourArea(cnt):
                 continue # 面積が小さいものは除く
             if hrchy[3] == -1: # hrchy => [次の輪郭, 前の輪郭, 子要素, 親要素]となっていて、次の輪郭は同一階層が先に探索される
                 continue # ルートノードは除く
+            # if hrchy[0] != -1:
+            #     continue
 
 
             # print(type(cnt))
@@ -70,17 +75,17 @@ class table_rec:
         # pp.pprint(self.rects)
         # print(self.rects)
 
-    def _zscore(self, x, axis = None):
-        xmean = x.mean(axis=axis, keepdims=True)
-        xstd  = np.std(x, axis=axis, keepdims=True)
-        zscore = (x-xmean)/xstd
-        return zscore
+    # def _zscore(self, x, axis = None):
+    #     xmean = x.mean(axis=axis, keepdims=True)
+    #     xstd  = np.std(x, axis=axis, keepdims=True)
+    #     zscore = (x-xmean)/xstd
+    #     return zscore
 
-    def _min_max(self, x, axis=None):
-        min = x.min(axis=axis, keepdims=True)
-        max = x.max(axis=axis, keepdims=True)
-        result = (x-min)/(max-min)
-        return result
+    # def _min_max(self, x, axis=None):
+        # min = x.min(axis=axis, keepdims=True)
+        # max = x.max(axis=axis, keepdims=True)
+        # result = (x-min)/(max-min)
+        # return result
 
     def draw_rect(self):
         draw_img = np.array(self.img, dtype=np.uint8)
@@ -105,32 +110,50 @@ class table_rec:
 
         return rotated_img
 
-    def txt_read(self, rects):
+    def txt_read(self, rects, img_corr=False):
         count = 0
-        for rect in rects:
-            print(rect)
-            img = self._transform(rect)
-            x = rect.min(axis=0)[0]
-            y = rect.min(axis=0)[1]
-            w = rect.max(axis=0)[0]
-            h = rect.max(axis=0)[1]
+        for i in range(4,10):
+            for rect in rects:
+                print(rect)
+                img = self._transform(rect)
 
-            print(x,w,y,h)
+                
 
-            # img = self.img[y:h, x:w]
-            cv2.imwrite("rec_images/ocr_{}.png".format(self.output_name), img)
-            pil_img = self._cv2pil(img)
-            # pil_img.save('rec_images/ocr_pil{}.jpg'.format(self.output_name))
-            txt = self.ocr.read_txt(pil_img)
-            print(txt)
+                if img_corr:
+                    w = img.shape[1]
+                    h = img.shape[0]
+                    h2 = int(h*0.1)
+                    w2 = int(w*0.1)
 
-            if count == 0:
-                break
+                    img = img[h2:h-h2, w2:w-w2]
 
-            count+=1
+                    # img = cv2.resize(img, (int(w*1.5), int(h*1.5)))
+                
+                cv2.imwrite("rec_images/ocr_{}.png".format(self.output_name), img)
+                pil_img = self._cv2pil(img)
+                # pil_img.save('rec_images/ocr_pil{}.jpg'.format(self.output_name))
+
+            
+                result = self.ocr.read_txt(pil_img, i)
+
+                # ``` WordBox or LineBoxを使う時 ```
+                for res in result:
+                    print(res.content)
+                    cv2.rectangle(img, res.position[0], res.position[1], (0, 0, 255), 1)
+                cv2.imshow(str(img_corr), img)
+                key = cv2.waitKey(0)
+                if key & 0xFF == ord('q'):
+                    cv2.destroyAllWindows()
+
+                print(result)
+
+                if count == self.stop:
+                    break
+
+                count+=1
 
     def _transform(self, rect):
-        epsilon = 0.02 * cv2.arcLength(rect, True)
+        epsilon = 0.01 * cv2.arcLength(rect, True)
         print(epsilon)
         approx = cv2.approxPolyDP(rect, epsilon, True)
 
@@ -178,6 +201,7 @@ class table_rec:
         self.get_contours()
         self.draw_rect()
 
+        self.txt_read(self.rects, img_corr=True)
         self.txt_read(self.rects)
 
 
@@ -185,7 +209,11 @@ if __name__ == "__main__":
     args = sys.argv
     file_name = args[1]
     img_path = "../images/base/{}.jpg".format(file_name)
-    
-    table_rec = table_rec(img_path, file_name, True)
-    # table_rec = table_rec(img_path, file_name)
-    table_rec.main()
+
+    if len(args) >= 3:
+        rotate = args[2]
+        table_rec = table_rec(img_path, file_name, rotate)
+        table_rec.main()
+    else:
+        table_rec = table_rec(img_path, file_name)
+        table_rec.main()
